@@ -1,58 +1,54 @@
 @echo off
-chcp 65001 >nul
-title 用户实时行为分析系统 - 全链路启动
+chcp 65001 >nul 2>&1
 
 echo ============================================================
-echo   用户实时行为分析系统 - 全链路启动
+echo   User Behavior Analysis System - Full Stack Launch
 echo   Group 18 - Guangdong Institute of Technology
 echo ============================================================
 echo.
-echo 启动顺序:
-echo   1. Spark Streaming (必须先启动)
+echo Startup order:
+echo   1. Spark Streaming (must start first)
 echo   2. Kafka Producer
 echo   3. SpringBoot API
-echo   4. Vue 前端
+echo   4. Vue Frontend
 echo.
-echo 请确认:
-echo   - Kafka 服务器 192.168.100.140:9092 已启动
-echo   - MySQL localhost:3306 已启动
-echo   - 各依赖已编译 (sbt compile / mvn compile / npm install)
+echo Prerequisites:
+echo   - Kafka server 192.168.100.140:9092 is running
+echo   - MySQL localhost:3306 is running
 echo.
 pause
 
 echo.
-echo [1/4] 启动 Spark Streaming...
-start "Spark Streaming" cmd /c "%~dp0scripts\start-streaming.bat"
-echo 等待 Streaming 初始化 (30s)...
+echo [1/4] Starting Spark Streaming...
+start "SparkStreaming" cmd /c "%~dp0scripts\start-streaming.bat"
+echo Waiting 30s for Streaming to initialize...
 timeout /t 30 /nobreak >nul
 
-echo [2/4] 启动 Kafka Producer...
-start "Kafka Producer" cmd /c "%~dp0scripts\start-producer.bat"
+echo [2/4] Starting Kafka Producer...
+start "KafkaProducer" cmd /c "%~dp0scripts\start-producer.bat"
 
-echo [3/4] 启动 SpringBoot API...
-start "SpringBoot API" cmd /c "%~dp0scripts\start-backend.bat"
-echo 等待 SpringBoot 启动 (15s)...
+echo [3/4] Starting SpringBoot API...
+start "SpringBootAPI" cmd /c "%~dp0scripts\start-backend.bat"
+echo Waiting 15s for SpringBoot to start...
 timeout /t 15 /nobreak >nul
 
-echo [4/4] 启动 Vue 前端...
-start "Vue Frontend" cmd /c "%~dp0scripts\start-frontend.bat"
+echo [4/4] Starting Vue Frontend...
+start "VueFrontend" cmd /c "%~dp0scripts\start-frontend.bat"
 timeout /t 5 /nobreak >nul
 
 echo.
 echo ============================================================
-echo   全部服务已启动！
-echo   Streaming : 后台运行
-echo   Producer  : 后台运行
-echo   Backend   : http://localhost:8080
-echo   Frontend  : http://localhost:5173
+echo   All services started!
+echo   Backend  : http://localhost:8080
+echo   Frontend : http://localhost:5173
 echo ============================================================
 echo.
-echo 浏览器打开 http://localhost:5173 查看可视化仪表盘
+echo Open http://localhost:5173 in browser to view dashboard.
 echo.
-echo 按任意键关闭所有服务...
+echo Press any key to stop all services...
 pause >nul
 
 taskkill /f /im java.exe 2>nul
 taskkill /f /im node.exe 2>nul
-echo 所有服务已停止。
+echo All services stopped.
 pause

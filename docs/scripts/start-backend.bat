@@ -1,10 +1,9 @@
 @echo off
-chcp 65001 >nul
-title SpringBoot API - 数据服务
+chcp 65001 >nul 2>&1
+cd /d "%~dp0..\..\backend"
 echo ============================================================
-echo   SpringBoot REST API - 端口 8080
+echo   SpringBoot REST API - Port 8080
 echo   MySQL: localhost:3306 / user_behavior_db
 echo ============================================================
-cd /d "%~dp0..\..\backend"
 mvn spring-boot:run
 pause

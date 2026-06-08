@@ -1,10 +1,9 @@
 @echo off
-chcp 65001 >nul
-title Vue 3 Dashboard - 可视化仪表盘
-echo ============================================================
-echo   Vue 3 + ECharts 可视化仪表盘
-echo   浏览器打开 http://localhost:5173
-echo ============================================================
+chcp 65001 >nul 2>&1
 cd /d "%~dp0..\..\frontend"
+echo ============================================================
+echo   Vue 3 + ECharts Dashboard
+echo   Open http://localhost:5173 in browser
+echo ============================================================
 npm run dev
 pause

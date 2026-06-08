@@ -1,10 +1,9 @@
 @echo off
-chcp 65001 >nul
-title Kafka Producer - 用户行为日志生成器
-echo ============================================================
-echo   Kafka Producer - 模拟用户行为日志生成
-echo   目标: 192.168.100.140:9092
-echo ============================================================
+chcp 65001 >nul 2>&1
 cd /d "%~dp0..\..\kafka-producer"
+echo ============================================================
+echo   Kafka Producer - User Behavior Log Generator
+echo   Target: 192.168.100.140:9092
+echo ============================================================
 sbt "runMain producer.KafkaProducerApp"
 pause
