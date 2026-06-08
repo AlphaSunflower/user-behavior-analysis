@@ -68,3 +68,27 @@ ON DUPLICATE KEY UPDATE action_type=action_type;
 -- 初始化在线人数记录
 INSERT INTO online_count (id, online_users) VALUES (1, 0)
 ON DUPLICATE KEY UPDATE id=id;
+
+-- 表8：用户维表（真实用户去重）
+CREATE TABLE IF NOT EXISTS users (
+    user_id      BIGINT       NOT NULL PRIMARY KEY COMMENT '用户ID',
+    user_name    VARCHAR(50)  DEFAULT '' COMMENT '用户名',
+    user_level   VARCHAR(20)  DEFAULT '新用户' COMMENT '用户等级',
+    region       VARCHAR(50)  DEFAULT '' COMMENT '常驻地区',
+    first_seen   DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '首次出现时间',
+    last_seen    DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后活跃时间',
+    total_visits BIGINT       DEFAULT 0 COMMENT '累计访问次数',
+    is_online    TINYINT      DEFAULT 0 COMMENT '是否在线(1=在线,0=离线)',
+    status       VARCHAR(20)  DEFAULT 'active' COMMENT '账户状态'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户维表';
+
+-- 表9：各等级实时在线人数
+CREATE TABLE IF NOT EXISTS user_level_online_stats (
+    level_type   VARCHAR(20) NOT NULL PRIMARY KEY COMMENT '等级(新用户/普通用户/VIP用户)',
+    online_count BIGINT      NOT NULL DEFAULT 0 COMMENT '当前在线人数',
+    update_time  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='各等级实时在线人数';
+
+INSERT INTO user_level_online_stats (level_type, online_count) VALUES
+('新用户',0),('普通用户',0),('VIP用户',0)
+ON DUPLICATE KEY UPDATE level_type=level_type;

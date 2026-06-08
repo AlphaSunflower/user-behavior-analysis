@@ -37,4 +37,10 @@ public interface StatsMapper {
 
     @Select("SELECT * FROM user_level_stats ORDER BY count DESC")
     List<UserLevelStats> getUserLevelStats();
+
+    @Select("SELECT * FROM user_level_online_stats ORDER BY online_count DESC")
+    List<UserLevelOnline> getUserLevelOnline();
+
+    @Select("SELECT COUNT(*) FROM users")
+    Long getUserCount();
 }

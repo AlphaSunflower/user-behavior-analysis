@@ -5,7 +5,7 @@ import model.{BlacklistCommand, UserBehaviorLog}
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.kafka010._
-import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
+import org.apache.spark.streaming.{Seconds, StreamingContext}
 import util.{KafkaConfig, MySQLConnectionPool}
 
 /**
@@ -53,10 +53,7 @@ object UserBehaviorStreaming {
 
     val ssc = new StreamingContext(conf, Seconds(10))                   // 微批次间隔 10 秒
 
-    // ========== 2. 检查点配置（用于窗口操作恢复） ==========
-    ssc.checkpoint("./checkpoint")
-
-    // ========== 3. 创建 Kafka DStream ==========
+    // ========== 2. 创建 Kafka DStream（无窗口操作，不需要 checkpoint）==========
     // 行为日志流
     val behaviorStream = KafkaUtils.createDirectStream[String, String](
       ssc,
@@ -150,40 +147,95 @@ object UserBehaviorStreaming {
       }
     }
 
-    // ---- 6.2 1 分钟实时在线人次（滑动窗口：窗口 60s，滑动 10s） ----
-    val onlineCount = cleanedStream
-      .map(log => (log.userId, 1L))
-      .reduceByKeyAndWindow(
-        (a: Long, b: Long) => a + b,    // 窗口内相同 userId 计数
-        (a: Long, b: Long) => a - b,    // 逆向操作（离开窗口的数据）
-        Minutes(1),                      // 窗口长度 60 秒
-        Seconds(10)                      // 滑动间隔 10 秒
-      )
-      .map(_._1)                         // 只保留 userId
-      .count()                           // 统计去重后的用户数（实际上不去重，统计活跃记录数）
+    // ---- 6.2 用户维表维护 + 真实去重在线人次 ----
+    cleanedStream.foreachRDD { rdd =>
+      if (!rdd.isEmpty()) {
+        val conn = MySQLConnectionPool.getConnection
+        try {
+          // 1. 收集本批次在线用户 ID
+          val onlineUserIds = rdd.map(_.userId).distinct().collect().toSet
 
-    onlineCount.foreachRDD { rdd =>
-      rdd.foreachPartition { partition =>
-        if (partition.nonEmpty) {
-          val conn = MySQLConnectionPool.getConnection
-          try {
-            val sql =
-              """INSERT INTO online_count (id, online_users, update_time)
-                |VALUES (1, ?, NOW())
-                |ON DUPLICATE KEY UPDATE
-                |  online_users = VALUES(online_users),
-                |  update_time = NOW()""".stripMargin
-            val stmt = conn.prepareStatement(sql)
-            partition.foreach { count =>
-              stmt.setLong(1, count)
-              stmt.addBatch()
-            }
-            stmt.executeBatch()
-            stmt.close()
-            println(s"[MySQL] online_count: 写入成功")
-          } finally {
-            MySQLConnectionPool.closeConnection(conn)
+          // 2. 从日志中取每个用户的最新信息（用于首次 INSERT）
+          val userInfoMap = rdd
+            .map(log => log.userId -> (log.userName, log.userLevel, log.region))
+            .reduceByKey((a, _) => a)  // 同批次同用户取第一条
+            .collectAsMap()
+
+          // 3. 遍历在线用户，INSERT 新用户 / UPDATE 老用户
+          val upsertSql =
+            """INSERT INTO users (user_id, user_name, user_level, region, first_seen, last_seen, total_visits, is_online)
+              |VALUES (?, ?, ?, ?, NOW(), NOW(), 1, 1)
+              |ON DUPLICATE KEY UPDATE
+              |  last_seen = NOW(),
+              |  total_visits = total_visits + 1,
+              |  is_online = 1""".stripMargin
+          val upsertStmt = conn.prepareStatement(upsertSql)
+          onlineUserIds.foreach { uid =>
+            val info = userInfoMap.getOrElse(uid, ("", "新用户", ""))
+            upsertStmt.setLong(1, uid)
+            upsertStmt.setString(2, info._1)
+            upsertStmt.setString(3, info._2)
+            upsertStmt.setString(4, info._3)
+            upsertStmt.addBatch()
           }
+          upsertStmt.executeBatch()
+          upsertStmt.close()
+
+          // 4. 将超过 1 分钟未活跃的用户标记为离线
+          val offlineSql = "UPDATE users SET is_online = 0 WHERE is_online = 1 AND last_seen < DATE_SUB(NOW(), INTERVAL 1 MINUTE)"
+          val offlineStmt = conn.createStatement()
+          val offlineCount = offlineStmt.executeUpdate(offlineSql)
+          offlineStmt.close()
+
+          // 5. 统计在线总人数
+          val countSql = "SELECT COUNT(*) AS cnt FROM users WHERE is_online = 1"
+          val countRs = conn.createStatement().executeQuery(countSql)
+          var totalOnline = 0L
+          if (countRs.next()) totalOnline = countRs.getLong("cnt")
+          countRs.close()
+          println(s"[Users] 本批次在线: ${onlineUserIds.size}, 离线: $offlineCount, 总在线: $totalOnline")
+
+          // 6. 写入 online_count 表
+          val onlineSql =
+            """INSERT INTO online_count (id, online_users, update_time)
+              |VALUES (1, ?, NOW())
+              |ON DUPLICATE KEY UPDATE
+              |  online_users = VALUES(online_users),
+              |  update_time = NOW()""".stripMargin
+          val onlineStmt = conn.prepareStatement(onlineSql)
+          onlineStmt.setLong(1, totalOnline)
+          onlineStmt.executeUpdate()
+          onlineStmt.close()
+
+          // 7. 按用户等级统计在线人数
+          val levelSql =
+            """SELECT user_level, COUNT(*) AS cnt FROM users WHERE is_online = 1 GROUP BY user_level"""
+          val levelRs = conn.createStatement().executeQuery(levelSql)
+          val levelCounts = scala.collection.mutable.Map[String, Long]()
+          while (levelRs.next()) {
+            levelCounts(levelRs.getString("user_level")) = levelRs.getLong("cnt")
+          }
+          levelRs.close()
+
+          val levelUpsertSql =
+            """INSERT INTO user_level_online_stats (level_type, online_count, update_time)
+              |VALUES (?, ?, NOW())
+              |ON DUPLICATE KEY UPDATE
+              |  online_count = VALUES(online_count),
+              |  update_time = NOW()""".stripMargin
+          val levelStmt = conn.prepareStatement(levelUpsertSql)
+          val allLevels = Array("新用户", "普通用户", "VIP用户")
+          allLevels.foreach { lv =>
+            levelStmt.setString(1, lv)
+            levelStmt.setLong(2, levelCounts.getOrElse(lv, 0L))
+            levelStmt.addBatch()
+          }
+          levelStmt.executeBatch()
+          levelStmt.close()
+          println(s"[Users] 在线分布: ${allLevels.map(lv => s"$lv=${levelCounts.getOrElse(lv, 0L)}").mkString(", ")}")
+
+        } finally {
+          MySQLConnectionPool.closeConnection(conn)
         }
       }
     }

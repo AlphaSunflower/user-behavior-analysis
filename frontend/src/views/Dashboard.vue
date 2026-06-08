@@ -16,6 +16,8 @@
       <OnlineCount
         :count="data.online?.onlineUsers || 0"
         :updateTime="data.online?.updateTime || ''"
+        :levelOnline="data.levelOnline || []"
+        :totalUsers="data.totalUsers || 0"
       />
 
       <div class="card stat-card">
