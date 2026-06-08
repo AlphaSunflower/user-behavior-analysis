@@ -10,11 +10,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 详细实现方案见：[实现方案.md](./实现方案.md)
 
-### 关键修复记录
+### 关键记录
 
-- **kafka-clients 必须 3.3.2**：2.6.0 会导致 `metadata after timeout` 错误。kafka-producer/build.sbt 已配置正确版本
-- **编码**：所有 SBT 项目已配置 UTF-8 JVM 参数
-- **Producer 独立**：kafka-producer 是独立 SBT 项目，可与 kafka-spark 同时运行
+- **kafka-clients 必须 3.3.2**：2.6.0 会导致 `metadata after timeout` 错误
+- **编码**：所有 SBT 项目已配置 UTF-8 + IPv4 JVM 参数
+- **Producer 独立**：kafka-producer/ 与 kafka-spark/ 分目录运行，无 SBT 锁冲突
+- **在线人次**：已改为用户维表真人去重（users 表），不再使用 reduceByKeyAndWindow
+- **无 checkpoint**：已移除 ssc.checkpoint()，重新编译启动前需清理 target/ 目录
+- **Kafka 地址**：192.168.100.140:9092，Windows hosts 文件需映射 hadoop
 
 ### 文档索引
 
