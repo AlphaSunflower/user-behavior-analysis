@@ -19,6 +19,9 @@ libraryDependencies ++= Seq(
 
 // JDK 17+ 运行 Spark 所需的 JVM 模块开放参数
 run / javaOptions ++= Seq(
+  "-Dfile.encoding=UTF-8",
+  "-Dsun.stdout.encoding=UTF-8",
+  "-Dsun.stderr.encoding=UTF-8",
   "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
   "--add-opens=java.base/java.nio=ALL-UNNAMED",
   "--add-opens=java.base/java.lang=ALL-UNNAMED",
