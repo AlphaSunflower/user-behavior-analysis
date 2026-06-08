@@ -59,13 +59,27 @@ object KafkaProducerApp {
     props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     props.put("acks", "1")
     props.put("retries", "3")
-    props.put("client.dns.lookup", "use_all_dns_ips")
+    props.put("request.timeout.ms", "10000")
+    props.put("metadata.max.age.ms", "5000")
+    props.put("max.block.ms", "10000")
+    props.put("delivery.timeout.ms", "30000")
+    // 启用调试日志
+    props.put("client.id", "test-producer")
 
     val producer = new KafkaProducer[String, String](props)
     val random   = new Random()
     var msgCount = 0L
 
     try {
+      // 测试连接
+      println("[KafkaProducer] 正在测试连接...")
+      val partitions = producer.partitionsFor(TOPIC)
+      if (partitions == null || partitions.isEmpty) {
+        System.err.println(s"[KafkaProducer] 错误: 无法获取 Topic '$TOPIC' 的元数据，请检查 Kafka 连接")
+        System.exit(1)
+      }
+      println(s"[KafkaProducer] 连接成功，Topic '$TOPIC' 有 ${partitions.size()} 个分区")
+      println("=" * 60)
       while (true) {
         val userId   = 10001 + random.nextInt(100)
         val userName = surnames(random.nextInt(surnames.length)) +
