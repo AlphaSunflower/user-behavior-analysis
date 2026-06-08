@@ -7,7 +7,7 @@ package util
  */
 object KafkaConfig {
   // Kafka 集群地址
-  val BOOTSTRAP_SERVERS = "192.168.100.140:9092"
+  val BOOTSTRAP_SERVERS = "hadoop:9092"
 
   // 主题名称
   val TOPIC_USER_BEHAVIOR = "user_behavior"

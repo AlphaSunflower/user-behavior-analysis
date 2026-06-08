@@ -15,5 +15,5 @@ mybatis:
 
 # Kafka 配置（黑名单指令）
 kafka:
-  bootstrap-servers: 192.168.100.140:9092
+  bootstrap-servers: hadoop:9092
   blacklist-topic: user_blacklist
