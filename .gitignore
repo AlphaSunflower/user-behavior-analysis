@@ -1,0 +1,55 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# SBT
+kafka-spark/target/
+kafka-spark/project/target/
+kafka-spark/project/project/
+kafka-spark/checkpoint/
+
+# Maven
+backend/target/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Spark
+metastore_db/
+derby.log
+spark-warehouse/
+
+# Logs
+*.log
+/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Superpowers
+.superpowers/
+
+# Playwright
+.playwright-mcp/
+
+# Codegraph (local index, regenerated per machine)
+.codegraph/
+
+# Claude Code local settings
+.claude/
+
+# Screenshots
+*.png
+*.jpg
+*.jpeg
+
+# Env files
+.env
+.env.local
