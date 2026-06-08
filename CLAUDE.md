@@ -47,17 +47,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## 项目结构（3 模块单体代码库）
+## 项目结构（4 模块单体代码库）
 
 ```
 group-18/
-├── kafka-spark/                    # 模块一：Scala/SBT（JDK 8 编译，JDK 17 运行 + JVM 开放参数）
+├── kafka-producer/                 # 模块一：Kafka 生产者，独立 SBT 项目（可与 kafka-spark 同时运行）
+│   ├── build.sbt                   # 仅依赖 kafka-clients 2.6.0
+│   └── src/main/scala/producer/
+│       └── KafkaProducerApp.scala  # 独立的生产者，所有配置和数据池内联
+│
+├── kafka-spark/                    # 模块二：Spark Streaming，独立 SBT 项目
 │   ├── build.sbt
 │   ├── project/
 │   │   ├── plugins.sbt             # sbt-assembly 2.1.5
 │   │   └── build.properties        # sbt 1.9.0
 │   └── src/main/scala/
-│       ├── producer/KafkaProducerApp.scala         # Kafka 生产者：模拟生成用户行为日志
 │       ├── streaming/UserBehaviorStreaming.scala   # Spark Streaming 主程序：消费、清洗、计算、写入 MySQL
 │       ├── model/UserBehaviorLog.scala             # 日志 case class
 │       ├── model/BlacklistCommand.scala            # 黑名单指令 case class
@@ -109,16 +113,25 @@ group-18/
 
 ## 构建与运行
 
-### kafka-spark 模块（Scala/SBT）
+### kafka-producer 模块（独立 SBT 项目，可与 kafka-spark 同时运行）
 
 ```bash
-cd kafka-spark
+cd kafka-producer
 
 # 编译
 sbt compile
 
 # 运行 Kafka Producer（模拟日志生成，发送到 192.168.100.140:9092）
 sbt "runMain producer.KafkaProducerApp"
+```
+
+### kafka-spark 模块（Spark Streaming，独立 SBT 项目）
+
+```bash
+cd kafka-spark
+
+# 编译
+sbt compile
 
 # 运行 Spark Streaming（本地模式，消费 Kafka + 写入本地 MySQL）
 sbt "runMain streaming.UserBehaviorStreaming"
@@ -167,17 +180,18 @@ npm run build
 ## 全链路启动顺序
 
 ```bash
-# 1. 确保 Kafka 服务端运行（192.168.100.140:9092）
-# 2. 启动 Spark Streaming（先启动，消费 latest offset）
+# 打开 4 个终端，各自 cd 到不同目录（不再有 SBT 锁冲突）
+
+# 终端 1：Spark Streaming（先启动，消费 latest offset）
 cd kafka-spark && sbt "runMain streaming.UserBehaviorStreaming"
 
-# 3. 启动 Kafka Producer（产生数据）
-cd kafka-spark && sbt "runMain producer.KafkaProducerApp"
+# 终端 2：Kafka Producer（等 Streaming 就绪后启动）
+cd kafka-producer && sbt "runMain producer.KafkaProducerApp"
 
-# 4. 启动 SpringBoot API
+# 终端 3：SpringBoot API
 cd backend && mvn spring-boot:run
 
-# 5. 启动 Vue 前端
+# 终端 4：Vue 前端
 cd frontend && npm run dev
 # 浏览器打开 http://localhost:5173
 ```

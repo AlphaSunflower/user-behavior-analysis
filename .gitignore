@@ -11,6 +11,8 @@ kafka-spark/target/
 kafka-spark/project/target/
 kafka-spark/project/project/
 kafka-spark/checkpoint/
+kafka-producer/target/
+kafka-producer/project/target/
 
 # Maven
 backend/target/

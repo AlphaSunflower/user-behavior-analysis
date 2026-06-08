@@ -1,18 +1,24 @@
 package producer
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import util.KafkaConfig
 import scala.util.Random
+import java.util.Properties
 
 /**
  * Kafka 生产者 — 模拟用户行为日志生成
  *
+ * 独立 SBT 项目，与 kafka-spark 可同时运行。
+ *
  * 运行方式：
- *   sbt "runMain producer.KafkaProducerApp"
+ *   cd kafka-producer && sbt "runMain producer.KafkaProducerApp"
  */
 object KafkaProducerApp {
 
-  // 模拟数据池
+  // ==== 配置 ====
+  private val BOOTSTRAP_SERVERS = "192.168.100.140:9092"
+  private val TOPIC = "user_behavior"
+
+  // ==== 模拟数据池 ====
   private val actions = Array(
     "浏览", "点击", "收藏", "购买", "退出",
     "搜索", "分享", "评论", "登录", "注册",
@@ -43,18 +49,23 @@ object KafkaProducerApp {
   def main(args: Array[String]): Unit = {
     println("=" * 60)
     println(s"[KafkaProducer] 启动中...")
-    println(s"[KafkaProducer] 目标: ${KafkaConfig.BOOTSTRAP_SERVERS}")
-    println(s"[KafkaProducer] Topic: ${KafkaConfig.TOPIC_USER_BEHAVIOR}")
+    println(s"[KafkaProducer] 目标: $BOOTSTRAP_SERVERS")
+    println(s"[KafkaProducer] Topic: $TOPIC")
     println("=" * 60)
 
-    val props   = KafkaConfig.getProducerParams()
+    val props = new Properties()
+    props.put("bootstrap.servers", BOOTSTRAP_SERVERS)
+    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.put("acks", "1")
+    props.put("retries", "3")
+
     val producer = new KafkaProducer[String, String](props)
     val random   = new Random()
     var msgCount = 0L
 
     try {
       while (true) {
-        // 随机生成一条用户行为日志
         val userId   = 10001 + random.nextInt(100)
         val userName = surnames(random.nextInt(surnames.length)) +
                        givenNames(random.nextInt(givenNames.length))
@@ -63,20 +74,14 @@ object KafkaProducerApp {
         val region   = regions(random.nextInt(regions.length))
         val device   = devices(random.nextInt(devices.length))
         val source   = sources(random.nextInt(sources.length))
-        val duration = 5 + random.nextInt(595)     // 5~600 秒
+        val duration = 5 + random.nextInt(595)
         val level    = levels(random.nextInt(levels.length))
         val timestamp = java.time.LocalDateTime.now()
           .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-        // Tab 分隔的日志行（10 字段）
         val logLine = s"$userId\t$userName\t$action\t$page\t$timestamp\t$region\t$device\t$source\t$duration\t$level"
 
-        // 发送到 Kafka
-        val record = new ProducerRecord[String, String](
-          KafkaConfig.TOPIC_USER_BEHAVIOR,
-          null,  // key 为空，均匀分布到各分区
-          logLine
-        )
+        val record = new ProducerRecord[String, String](TOPIC, null, logLine)
         producer.send(record, (metadata, exception) => {
           if (exception != null) {
             System.err.println(s"[KafkaProducer] 发送失败: ${exception.getMessage}")
@@ -88,7 +93,6 @@ object KafkaProducerApp {
           println(s"[KafkaProducer] 已发送 $msgCount 条消息 | 最新: $logLine")
         }
 
-        // 间隔 200~500ms，模拟真实流量
         Thread.sleep(200 + random.nextInt(300))
       }
     } catch {
