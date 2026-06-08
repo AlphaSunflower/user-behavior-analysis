@@ -25,6 +25,8 @@
 
       <RegionBarChart :data="data.regions || []" />
       <BehaviorPieChart :data="data.behaviors || []" />
+      <DeviceBarChart :data="data.devices || []" />
+      <SourcePieChart :data="data.sources || []" />
       <BlacklistPanel :list="data.blacklist || []" @refresh="loadData" />
     </div>
   </div>
@@ -35,6 +37,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import OnlineCount from '../components/OnlineCount.vue'
 import RegionBarChart from '../components/RegionBarChart.vue'
 import BehaviorPieChart from '../components/BehaviorPieChart.vue'
+import DeviceBarChart from '../components/DeviceBarChart.vue'
+import SourcePieChart from '../components/SourcePieChart.vue'
 import BlacklistPanel from '../components/BlacklistPanel.vue'
 import { fetchOverview } from '../api/stats.js'
 

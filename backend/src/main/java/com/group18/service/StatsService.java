@@ -41,6 +41,9 @@ public class StatsService {
         overview.put("regions", statsMapper.getRegionStats());
         overview.put("online", statsMapper.getOnlineCount());
         overview.put("behaviors", statsMapper.getBehaviorDistribution());
+        overview.put("devices", statsMapper.getDeviceStats());
+        overview.put("sources", statsMapper.getSourceStats());
+        overview.put("levels", statsMapper.getUserLevelStats());
         overview.put("blacklist", statsMapper.getBlacklist());
         return overview;
     }

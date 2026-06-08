@@ -28,8 +28,12 @@ import util.{KafkaConfig, MySQLConnectionPool}
  */
 object UserBehaviorStreaming {
 
-  // 有效行为类型
-  private val validActions = Set("browse", "click", "favorite", "purchase", "exit")
+  // 有效行为类型（12 种）
+  private val validActions = Set(
+    "browse", "click", "favorite", "purchase", "exit",
+    "search", "share", "comment", "login", "register",
+    "add_cart", "download"
+  )
 
   def main(args: Array[String]): Unit = {
     println("=" * 60)
@@ -216,6 +220,102 @@ object UserBehaviorStreaming {
       }
     }
 
+    // ---- 6.4 设备类型分布统计 ----
+    val deviceStats = cleanedStream
+      .map(log => (log.device, 1L))
+      .reduceByKey(_ + _)
+
+    deviceStats.foreachRDD { rdd =>
+      rdd.foreachPartition { partition =>
+        if (partition.nonEmpty) {
+          val conn = MySQLConnectionPool.getConnection
+          try {
+            val sql =
+              """INSERT INTO device_stats (device_type, count, update_time)
+                |VALUES (?, ?, NOW())
+                |ON DUPLICATE KEY UPDATE
+                |  count = count + VALUES(count),
+                |  update_time = NOW()""".stripMargin
+            val stmt = conn.prepareStatement(sql)
+            partition.foreach { case (device, count) =>
+              stmt.setString(1, device)
+              stmt.setLong(2, count)
+              stmt.addBatch()
+            }
+            stmt.executeBatch()
+            stmt.close()
+            println(s"[MySQL] device_stats: 写入 ${partition.size} 条")
+          } finally {
+            MySQLConnectionPool.closeConnection(conn)
+          }
+        }
+      }
+    }
+
+    // ---- 6.5 来源渠道分布统计 ----
+    val sourceStats = cleanedStream
+      .map(log => (log.source, 1L))
+      .reduceByKey(_ + _)
+
+    sourceStats.foreachRDD { rdd =>
+      rdd.foreachPartition { partition =>
+        if (partition.nonEmpty) {
+          val conn = MySQLConnectionPool.getConnection
+          try {
+            val sql =
+              """INSERT INTO source_stats (source_type, count, update_time)
+                |VALUES (?, ?, NOW())
+                |ON DUPLICATE KEY UPDATE
+                |  count = count + VALUES(count),
+                |  update_time = NOW()""".stripMargin
+            val stmt = conn.prepareStatement(sql)
+            partition.foreach { case (source, count) =>
+              stmt.setString(1, source)
+              stmt.setLong(2, count)
+              stmt.addBatch()
+            }
+            stmt.executeBatch()
+            stmt.close()
+            println(s"[MySQL] source_stats: 写入 ${partition.size} 条")
+          } finally {
+            MySQLConnectionPool.closeConnection(conn)
+          }
+        }
+      }
+    }
+
+    // ---- 6.6 用户等级分布统计 ----
+    val levelStats = cleanedStream
+      .map(log => (log.userLevel, 1L))
+      .reduceByKey(_ + _)
+
+    levelStats.foreachRDD { rdd =>
+      rdd.foreachPartition { partition =>
+        if (partition.nonEmpty) {
+          val conn = MySQLConnectionPool.getConnection
+          try {
+            val sql =
+              """INSERT INTO user_level_stats (level_type, count, update_time)
+                |VALUES (?, ?, NOW())
+                |ON DUPLICATE KEY UPDATE
+                |  count = count + VALUES(count),
+                |  update_time = NOW()""".stripMargin
+            val stmt = conn.prepareStatement(sql)
+            partition.foreach { case (level, count) =>
+              stmt.setString(1, level)
+              stmt.setLong(2, count)
+              stmt.addBatch()
+            }
+            stmt.executeBatch()
+            stmt.close()
+            println(s"[MySQL] user_level_stats: 写入 ${partition.size} 条")
+          } finally {
+            MySQLConnectionPool.closeConnection(conn)
+          }
+        }
+      }
+    }
+
     // ========== 7. 启动流计算 ==========
     ssc.start()
     println("[Streaming] 流计算已启动，等待数据...")
@@ -225,13 +325,13 @@ object UserBehaviorStreaming {
   // ==================== 辅助方法 ====================
 
   /**
-   * 解析 Tab 分隔的日志行
-   * 格式: userId\tuserName\taction\tpage\ttimestamp\tregion
+   * 解析 Tab 分隔的日志行（10 字段）
+   * 格式: userId\tuserName\taction\tpage\ttimestamp\tregion\tdevice\tsource\tduration\tuserLevel
    */
   def parseLine(line: String): Option[UserBehaviorLog] = {
     try {
       val parts = line.split("\t")
-      if (parts.length != 6) return None
+      if (parts.length != 10) return None
 
       val userId    = parts(0).toLong
       val userName  = parts(1).trim
@@ -239,13 +339,18 @@ object UserBehaviorStreaming {
       val page      = parts(3).trim
       val timestamp = parts(4).trim
       val region    = parts(5).trim
+      val device    = parts(6).trim
+      val source    = parts(7).trim
+      val duration  = parts(8).toInt
+      val userLevel = parts(9).trim
 
       // 空值校验
-      if (userName.isEmpty || action.isEmpty || region.isEmpty) return None
+      if (userName.isEmpty || action.isEmpty || region.isEmpty || device.isEmpty || source.isEmpty || userLevel.isEmpty)
+        return None
 
-      Some(UserBehaviorLog(userId, userName, action, page, timestamp, region))
+      Some(UserBehaviorLog(userId, userName, action, page, timestamp, region, device, source, duration, userLevel))
     } catch {
-      case _: NumberFormatException => None   // userId 不是数字
+      case _: NumberFormatException => None   // userId/duration 不是数字
       case _: Exception => None
     }
   }

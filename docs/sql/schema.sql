@@ -37,13 +37,41 @@ CREATE TABLE IF NOT EXISTS blacklist (
     create_time  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '添加时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='黑名单用户表';
 
--- 初始化行为分布数据（5 种行为类型）
+-- 表5：设备类型分布统计
+CREATE TABLE IF NOT EXISTS device_stats (
+    device_type VARCHAR(50)  NOT NULL PRIMARY KEY COMMENT '设备类型(mobile/desktop/tablet)',
+    count       BIGINT       NOT NULL DEFAULT 0 COMMENT '累计次数',
+    update_time DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备类型分布统计';
+
+-- 表6：来源渠道分布统计
+CREATE TABLE IF NOT EXISTS source_stats (
+    source_type VARCHAR(50)  NOT NULL PRIMARY KEY COMMENT '来源渠道(direct/search_engine/social_media/ad)',
+    count       BIGINT       NOT NULL DEFAULT 0 COMMENT '累计次数',
+    update_time DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='来源渠道分布统计';
+
+-- 表7：用户等级分布统计
+CREATE TABLE IF NOT EXISTS user_level_stats (
+    level_type  VARCHAR(50)  NOT NULL PRIMARY KEY COMMENT '用户等级(new/regular/vip)',
+    count       BIGINT       NOT NULL DEFAULT 0 COMMENT '累计次数',
+    update_time DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户等级分布统计';
+
+-- 初始化行为分布数据（12 种行为类型）
 INSERT INTO behavior_distribution (action_type, count) VALUES
-('browse',   0),
-('click',    0),
-('favorite', 0),
-('purchase', 0),
-('exit',     0)
+('browse',    0),
+('click',     0),
+('favorite',  0),
+('purchase',  0),
+('exit',      0),
+('search',    0),
+('share',     0),
+('comment',   0),
+('login',     0),
+('register',  0),
+('add_cart',  0),
+('download',  0)
 ON DUPLICATE KEY UPDATE action_type=action_type;
 
 -- 初始化在线人数记录

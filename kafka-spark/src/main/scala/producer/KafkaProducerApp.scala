@@ -13,11 +13,21 @@ import scala.util.Random
 object KafkaProducerApp {
 
   // 模拟数据池
-  private val actions  = Array("browse", "click", "favorite", "purchase", "exit")
-  private val regions  = Array(
-    "Beijing", "Shanghai", "Guangdong", "Shenzhen",
-    "Hangzhou", "Chengdu", "Wuhan", "Nanjing"
+  private val actions = Array(
+    "browse", "click", "favorite", "purchase", "exit",
+    "search", "share", "comment", "login", "register",
+    "add_cart", "download"
   )
+  private val regions = Array(
+    "Beijing", "Shanghai", "Guangdong", "Shenzhen",
+    "Hangzhou", "Chengdu", "Wuhan", "Nanjing",
+    "Tianjin", "Chongqing", "Suzhou", "Qingdao",
+    "Dalian", "Xiamen", "Changsha", "Zhengzhou",
+    "Kunming", "Jinan", "Hefei", "Fuzhou"
+  )
+  private val devices  = Array("mobile", "desktop", "tablet")
+  private val sources  = Array("direct", "search_engine", "social_media", "ad")
+  private val levels   = Array("new", "regular", "vip")
   private val pages = Array(
     "index.html", "product-detail.html", "search.html",
     "checkout.html", "user-center.html"
@@ -51,11 +61,15 @@ object KafkaProducerApp {
         val action   = actions(random.nextInt(actions.length))
         val page     = pages(random.nextInt(pages.length))
         val region   = regions(random.nextInt(regions.length))
+        val device   = devices(random.nextInt(devices.length))
+        val source   = sources(random.nextInt(sources.length))
+        val duration = 5 + random.nextInt(595)     // 5~600 秒
+        val level    = levels(random.nextInt(levels.length))
         val timestamp = java.time.LocalDateTime.now()
           .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-        // Tab 分隔的日志行
-        val logLine = s"$userId\t$userName\t$action\t$page\t$timestamp\t$region"
+        // Tab 分隔的日志行（10 字段）
+        val logLine = s"$userId\t$userName\t$action\t$page\t$timestamp\t$region\t$device\t$source\t$duration\t$level"
 
         // 发送到 Kafka
         val record = new ProducerRecord[String, String](

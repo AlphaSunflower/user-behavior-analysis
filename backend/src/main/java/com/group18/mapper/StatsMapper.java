@@ -1,9 +1,6 @@
 package com.group18.mapper;
 
-import com.group18.model.BehaviorDistribution;
-import com.group18.model.BlacklistEntry;
-import com.group18.model.OnlineCount;
-import com.group18.model.RegionStats;
+import com.group18.model.*;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -31,4 +28,13 @@ public interface StatsMapper {
 
     @Select("SELECT * FROM blacklist WHERE user_id = #{userId}")
     BlacklistEntry getBlacklistByUserId(@Param("userId") Long userId);
+
+    @Select("SELECT * FROM device_stats ORDER BY count DESC")
+    List<DeviceStats> getDeviceStats();
+
+    @Select("SELECT * FROM source_stats ORDER BY count DESC")
+    List<SourceStats> getSourceStats();
+
+    @Select("SELECT * FROM user_level_stats ORDER BY count DESC")
+    List<UserLevelStats> getUserLevelStats();
 }
