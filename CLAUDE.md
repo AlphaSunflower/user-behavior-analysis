@@ -10,6 +10,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 详细实现方案见：[实现方案.md](./实现方案.md)
 
+### 关键修复记录
+
+- **kafka-clients 必须 3.3.2**：2.6.0 会导致 `metadata after timeout` 错误。kafka-producer/build.sbt 已配置正确版本
+- **编码**：所有 SBT 项目已配置 UTF-8 JVM 参数
+- **Producer 独立**：kafka-producer 是独立 SBT 项目，可与 kafka-spark 同时运行
+
+### 文档索引
+
+| 文档 | 路径 |
+|------|------|
+| 实现方案 | [实现方案.md](./实现方案.md) |
+| 服务器启动指南 | [docs/服务器启动指南.md](./docs/服务器启动指南.md) |
+| 项目使用手册 | [docs/项目使用手册.md](./docs/项目使用手册.md) |
+| 一键启动脚本 | [docs/start-all.bat](./docs/start-all.bat) |
+| SQL 建表脚本 | [docs/sql/schema.sql](./docs/sql/schema.sql) |
+
 ---
 
 ## 环境路径
