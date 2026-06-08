@@ -15,7 +15,7 @@ import java.util.Properties
 object KafkaProducerApp {
 
   // ==== 配置 ====
-  private val BOOTSTRAP_SERVERS = "hadoop:9092"
+  private val BOOTSTRAP_SERVERS = "192.168.100.140:9092"
   private val TOPIC = "user_behavior"
 
   // ==== 模拟数据池 ====
@@ -59,6 +59,7 @@ object KafkaProducerApp {
     props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     props.put("acks", "1")
     props.put("retries", "3")
+    props.put("client.dns.lookup", "use_all_dns_ips")
 
     val producer = new KafkaProducer[String, String](props)
     val random   = new Random()

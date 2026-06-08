@@ -7,7 +7,7 @@ package util
  */
 object KafkaConfig {
   // Kafka 集群地址
-  val BOOTSTRAP_SERVERS = "hadoop:9092"
+  val BOOTSTRAP_SERVERS = "192.168.100.140:9092"
 
   // 主题名称
   val TOPIC_USER_BEHAVIOR = "user_behavior"
@@ -23,7 +23,8 @@ object KafkaConfig {
     "value.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
     "group.id"           -> groupId,
     "auto.offset.reset"  -> "latest",
-    "enable.auto.commit" -> (false: java.lang.Boolean)
+    "enable.auto.commit" -> (false: java.lang.Boolean),
+    "client.dns.lookup" -> "use_all_dns_ips"
   )
 
   // Kafka 生产者参数
