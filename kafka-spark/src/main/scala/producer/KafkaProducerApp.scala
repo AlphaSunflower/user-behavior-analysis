@@ -14,20 +14,20 @@ object KafkaProducerApp {
 
   // 模拟数据池
   private val actions = Array(
-    "browse", "click", "favorite", "purchase", "exit",
-    "search", "share", "comment", "login", "register",
-    "add_cart", "download"
+    "浏览", "点击", "收藏", "购买", "退出",
+    "搜索", "分享", "评论", "登录", "注册",
+    "加购", "下载"
   )
   private val regions = Array(
-    "Beijing", "Shanghai", "Guangdong", "Shenzhen",
-    "Hangzhou", "Chengdu", "Wuhan", "Nanjing",
-    "Tianjin", "Chongqing", "Suzhou", "Qingdao",
-    "Dalian", "Xiamen", "Changsha", "Zhengzhou",
-    "Kunming", "Jinan", "Hefei", "Fuzhou"
+    "北京", "上海", "广东", "深圳",
+    "杭州", "成都", "武汉", "南京",
+    "天津", "重庆", "苏州", "青岛",
+    "大连", "厦门", "长沙", "郑州",
+    "昆明", "济南", "合肥", "福州"
   )
-  private val devices  = Array("mobile", "desktop", "tablet")
-  private val sources  = Array("direct", "search_engine", "social_media", "ad")
-  private val levels   = Array("new", "regular", "vip")
+  private val devices  = Array("手机", "电脑", "平板")
+  private val sources  = Array("直接访问", "搜索引擎", "社交媒体", "广告投放")
+  private val levels   = Array("新用户", "普通用户", "VIP用户")
   private val pages = Array(
     "index.html", "product-detail.html", "search.html",
     "checkout.html", "user-center.html"

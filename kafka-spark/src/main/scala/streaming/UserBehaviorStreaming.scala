@@ -30,9 +30,9 @@ object UserBehaviorStreaming {
 
   // 有效行为类型（12 种）
   private val validActions = Set(
-    "browse", "click", "favorite", "purchase", "exit",
-    "search", "share", "comment", "login", "register",
-    "add_cart", "download"
+    "浏览", "点击", "收藏", "购买", "退出",
+    "搜索", "分享", "评论", "登录", "注册",
+    "加购", "下载"
   )
 
   def main(args: Array[String]): Unit = {

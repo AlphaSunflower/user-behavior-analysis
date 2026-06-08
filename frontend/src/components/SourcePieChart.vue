@@ -13,10 +13,6 @@ const props = defineProps({ data: { type: Array, default: () => [] } })
 const chartRef = ref(null)
 let chart = null
 
-const sourceLabels = {
-  direct: '直接访问', search_engine: '搜索引擎',
-  social_media: '社交媒体', ad: '广告投放'
-}
 const colors = ['#43e97b', '#4facfe', '#a18cd1', '#f093fb']
 
 function renderChart() {
@@ -24,7 +20,7 @@ function renderChart() {
   if (!chart) chart = echarts.init(chartRef.value)
 
   const pieData = props.data.map((d, i) => ({
-    name: sourceLabels[d.sourceType] || d.sourceType,
+    name: d.sourceType,
     value: d.count,
     itemStyle: { color: colors[i % colors.length] }
   }))

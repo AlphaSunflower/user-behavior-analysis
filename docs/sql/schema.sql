@@ -60,18 +60,9 @@ CREATE TABLE IF NOT EXISTS user_level_stats (
 
 -- 初始化行为分布数据（12 种行为类型）
 INSERT INTO behavior_distribution (action_type, count) VALUES
-('browse',    0),
-('click',     0),
-('favorite',  0),
-('purchase',  0),
-('exit',      0),
-('search',    0),
-('share',     0),
-('comment',   0),
-('login',     0),
-('register',  0),
-('add_cart',  0),
-('download',  0)
+('浏览',   0), ('点击',   0), ('收藏',   0), ('购买',   0),
+('退出',   0), ('搜索',   0), ('分享',   0), ('评论',   0),
+('登录',   0), ('注册',   0), ('加购',   0), ('下载',   0)
 ON DUPLICATE KEY UPDATE action_type=action_type;
 
 -- 初始化在线人数记录

@@ -16,13 +16,6 @@ const props = defineProps({
 const chartRef = ref(null)
 let chart = null
 
-const actionLabels = {
-  browse: '浏览', click: '点击', favorite: '收藏',
-  purchase: '购买', exit: '退出', search: '搜索',
-  share: '分享', comment: '评论', login: '登录',
-  register: '注册', add_cart: '加购', download: '下载'
-}
-
 const colors = ['#43e97b', '#38f9d7', '#4facfe', '#a18cd1', '#ff6b6b',
   '#f093fb', '#f5576c', '#4ecdc4', '#ffe66d', '#a8e6cf',
   '#ffd3b6', '#c3cfe2']
@@ -32,7 +25,7 @@ function renderChart() {
   if (!chart) chart = echarts.init(chartRef.value)
 
   const pieData = props.data.map((d, i) => ({
-    name: actionLabels[d.actionType] || d.actionType,
+    name: d.actionType,
     value: d.count,
     itemStyle: { color: colors[i % colors.length] }
   }))

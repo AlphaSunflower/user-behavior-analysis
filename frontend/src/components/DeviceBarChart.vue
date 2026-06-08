@@ -13,14 +13,13 @@ const props = defineProps({ data: { type: Array, default: () => [] } })
 const chartRef = ref(null)
 let chart = null
 
-const deviceLabels = { mobile: '手机', desktop: '电脑', tablet: '平板' }
-const deviceColors = { mobile: '#43e97b', desktop: '#4facfe', tablet: '#a18cd1' }
+const deviceColors = { '手机': '#43e97b', '电脑': '#4facfe', '平板': '#a18cd1' }
 
 function renderChart() {
   if (!chartRef.value) return
   if (!chart) chart = echarts.init(chartRef.value)
 
-  const names  = props.data.map(d => deviceLabels[d.deviceType] || d.deviceType)
+  const names  = props.data.map(d => d.deviceType)
   const counts = props.data.map(d => d.count)
   const colors = props.data.map(d => deviceColors[d.deviceType] || '#8899a6')
 
